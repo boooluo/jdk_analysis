@@ -1,8 +1,7 @@
 # jdk_analysis
 jdk源码分析
 
-优先级
-很多java开发的小伙伴都会阅读jdk源码，然而确不知道应该从哪读起。参照“[blog源码顺序](http://yuyublog.top/2018/10/08/java%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F/)”
+参照“[blog源码顺序](http://yuyublog.top/2018/10/08/java%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E9%A1%BA%E5%BA%8F/)”顺序开始阅读学习
 [标题为包名，后面序号为优先级1-4，优先级递减]
 
 ## java.lang
