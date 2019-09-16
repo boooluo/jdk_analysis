@@ -229,7 +229,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * applying the given function, returning the updated value. The
      * function should be side-effect-free, since it may be re-applied
      * when attempted updates fail due to contention among threads.
-     *
+     * 接收lamda表达式，对value进行算术运算
      * @param updateFunction a side-effect-free function
      * @return the updated value
      * @since 1.8

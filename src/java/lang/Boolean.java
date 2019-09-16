@@ -36,7 +36,7 @@ package java.lang;
  * {@code String} to a {@code boolean}, as well as other
  * constants and methods useful when dealing with a
  * {@code boolean}.
- *
+ * http://cmsblogs.com/?p=5198
  * @author  Arthur van Hoff
  * @since   JDK1.0
  */
@@ -57,7 +57,9 @@ public final class Boolean implements java.io.Serializable,
 
     /**
      * The Class object representing the primitive type boolean.
-     *
+     * Class.getPrimitiveClass用来做什么？
+     * 这是个native方法，在Class.c中有个Java_java_lang_Class_getPrimitiveClass方法与之对应，
+     * 所以JVM层面会通过JVM_FindPrimitiveClass函数会根据”boolean”字符串获得jclass，最终到Java层则为Class<Boolean>
      * @since   JDK1.1
      */
     @SuppressWarnings("unchecked")
@@ -76,7 +78,9 @@ public final class Boolean implements java.io.Serializable,
     /**
      * Allocates a {@code Boolean} object representing the
      * {@code value} argument.
-     *
+     * 一般不推荐直接使用构造函数来实例化Boolean对象，为什么呢？
+     * 实例化出多余的Boolean对象仍然能正确表示布尔值，但是会浪费一些空间和影响时间性能
+     * 所以会推荐使用Boolean.TRUE和Boolean.False，避免生成不必要的对象
      * <p><b>Note: It is rarely appropriate to use this constructor.
      * Unless a <i>new</i> instance is required, the static factory
      * {@link #valueOf(boolean)} is generally a better choice. It is
@@ -204,7 +208,9 @@ public final class Boolean implements java.io.Serializable,
     /**
      * Returns a hash code for a {@code boolean} value; compatible with
      * {@code Boolean.hashCode()}.
-     *
+     * 神奇，为什么hashcode是1231和1237呢
+     * https://blog.csdn.net/qq_21251983/article/details/52164403
+     * 使用hash算法，要尽可能避免冲突，取值的默认规则是取素数；而且，单个Boolean类型没有求hashcode的需求
      * @param value the value to hash
      * @return a hash code value for a {@code boolean} value.
      * @since 1.8

@@ -43,16 +43,34 @@ import sun.misc.Unsafe;
  * {@code AtomicBoolean} is used in applications such as atomically
  * updated flags, and cannot be used as a replacement for a
  * {@link java.lang.Boolean}.
- *
+ *  todo 怎么保证原子性的
+ *  todo compareAndSet 和getAndSet区别，为什么后者里面使用while
  * @since 1.5
  * @author Doug Lea
  */
 public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
-    // setup to use Unsafe.compareAndSwapInt for updates
+
+    /**
+        CAS:compareAndSwap 比较并交换，乐观锁，当多个线程尝试使用CAS同时更新一个变量时，只有其中一个线程能更新变量的值，而其他线程都失败，
+        失败的线程不会被挂起，而是被告知失败，可以重新尝试
+        三个参数：V 内存值
+                A 预期值
+                B 要更新的值
+        当且仅当，A和V相同时，才会将V修改成B，否则什么都不做
+        Unsafe类用于在任意内存地址位置读写数据
+     */
+    // setup to use Unsafe.compareAndSwapInt for updates 使用CAS进行更新
     private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    /**
+     * value相对于atomicBoolean类的的内存偏移量
+     */
     private static final long valueOffset;
 
+    /**
+     * 获取valueOffset
+     */
     static {
         try {
             valueOffset = unsafe.objectFieldOffset
@@ -60,6 +78,9 @@ public class AtomicBoolean implements java.io.Serializable {
         } catch (Exception ex) { throw new Error(ex); }
     }
 
+    /**
+     * volatile修饰，保证所有线程可见
+     */
     private volatile int value;
 
     /**
@@ -79,7 +100,7 @@ public class AtomicBoolean implements java.io.Serializable {
 
     /**
      * Returns the current value.
-     *
+     * 获取当前最新值
      * @return the current value
      */
     public final boolean get() {
@@ -89,7 +110,7 @@ public class AtomicBoolean implements java.io.Serializable {
     /**
      * Atomically sets the value to the given updated value
      * if the current value {@code ==} the expected value.
-     *
+     * 如果value=expect，则把值设置为update
      * @param expect the expected value
      * @param update the new value
      * @return {@code true} if successful. False return indicates that
@@ -121,7 +142,7 @@ public class AtomicBoolean implements java.io.Serializable {
 
     /**
      * Unconditionally sets to the given value.
-     *
+     * 设置当前值
      * @param newValue the new value
      */
     public final void set(boolean newValue) {
@@ -130,7 +151,7 @@ public class AtomicBoolean implements java.io.Serializable {
 
     /**
      * Eventually sets to the given value.
-     *
+     * 最终把值设置为newValue，使用该方法后，其他线程一段时间后还会获取到oldValue todo
      * @param newValue the new value
      * @since 1.6
      */
@@ -141,7 +162,7 @@ public class AtomicBoolean implements java.io.Serializable {
 
     /**
      * Atomically sets to the given value and returns the previous value.
-     *
+     * 设置newValue,返回OldValue，保证原子性
      * @param newValue the new value
      * @return the previous value
      */

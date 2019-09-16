@@ -12,7 +12,7 @@ jdk源码分析
 - [ ] AbstractStringBuilder 1
 - [ ] StringBuffer 1
 - [ ] StringBuilder 1
-- [ ] Boolean 2
+- [x] Boolean 2
 - [ ] Byte 2
 - [ ] Double 2
 - [ ] Float 2
@@ -84,9 +84,9 @@ jdk源码分析
 
 ## java.util.concurrent.atomic
 
-- [ ] AtomicBoolean 2
-- [ ] AtomicInteger 2
-- [ ] AtomicLong 2
+- [x] AtomicBoolean 2
+- [x] AtomicInteger 2
+- [x] AtomicLong 2
 - [ ] AtomicReference 3
 
 ## java.lang.reflect
