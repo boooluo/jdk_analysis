@@ -76,7 +76,7 @@ jdk源码分析
 - [ ] CountDownLatch 2
 - [ ] FutureTask 2
 - [ ] Semaphore 2
-- [ ] CyclicBarrier 2
+- [x] CyclicBarrier 2
 - [ ] CopyOnWriteArrayList 3
 - [ ] SynchronousQueue 3
 - [ ] BlockingDeque 3

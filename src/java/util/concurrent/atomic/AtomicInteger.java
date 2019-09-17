@@ -47,7 +47,11 @@ import sun.misc.Unsafe;
  * {@link java.lang.Integer}. However, this class does extend
  * {@code Number} to allow uniform access by tools and utilities that
  * deal with numerically-based classes.
+ * Q:原子变量使用的场景有哪些？
+ * A:很多情况下可以用于替换synchronized，如限流熔断
  *
+ * Q:ABA问题怎么解决？ https://juejin.im/post/5cc06e58f265da03a436d2b1
+ * A:使用AtomicStampedReference，增加一个版本号，在更新变量值的时候同时更新变量值和版本号
  * @since 1.5
  * @author Doug Lea
 */
