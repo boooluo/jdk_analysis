@@ -30,13 +30,30 @@ package java.lang;
  * Every class has {@code Object} as a superclass. All objects,
  * including arrays, implement the methods of this class.
  *
+ * Object类是的所有对象的父类，所有的对象实现了它的方法；
+ *
  * @author  unascribed
  * @see     java.lang.Class
  * @since   JDK1.0
  */
 public class Object {
-
+    /**
+     * native方法注册 不是很明白 涉及到JNI知识
+     * https://stackoverflow.com/questions/1010645/what-does-the-registernatives-method-do
+     * https://juejin.im/post/5b8c7f54e51d4538b63d3db8
+     *
+     */
     private static native void registerNatives();
+
+    /**
+     * 对象的初始化顺序为： 父类的static成员或者代码块（按写的先后顺序）->子类的static成员或者代码块（按写的先后顺序）
+     *      ->父类的普通成员或者代码块（按写的先后顺序）->父类的构造函数->子类的普通成员或者代码块（按写的先后顺序）
+     *      ->子类的构造函数
+     * static部分只是第一次创建实例的时候初始化；
+     * https://www.zhihu.com/question/49196023
+     *
+     * 所以有对象的创建就会执行下面的代码 把native方法注册
+     */
     static {
         registerNatives();
     }
@@ -45,11 +62,26 @@ public class Object {
      * Returns the runtime class of this {@code Object}. The returned
      * {@code Class} object is the object that is locked by {@code
      * static synchronized} methods of the represented class.
+     * 返回当前对象的运行时Class对象，这个Class对象会被static synchronized修饰的方法来给类加锁
+     *
+     * synchronized是Java中的关键字，是一种同步锁。它修饰的对象有以下几种：
+     * 1. 修饰一个代码块，被修饰的代码块称为同步语句块，其作用的范围是大括号{}括起来的代码，作用的对象是调用这个代码块的对象；
+     * 2. 修饰一个方法，被修饰的方法称为同步方法，其作用的范围是整个方法，作用的对象是调用这个方法的对象；
+     * 3. 修饰一个静态的方法，其作用的范围是整个静态方法，作用的对象是这个类的所有对象；
+     * 4. 修饰一个类，其作用的范围是synchronized后面括号括起来的部分，作用主的对象是这个类的所有对象。
+     * https://blog.csdn.net/zhangqilugrubby/article/details/80500505
+     *
+     * 注意事项：
+     * 1. 在定义接口方法时不能使用synchronized关键字。
+     * 2. 构造方法不能使用synchronized关键字，但可以使用synchronized代码块来进行同步。
      *
      * <p><b>The actual result type is {@code Class<? extends |X|>}
      * where {@code |X|} is the erasure of the static type of the
      * expression on which {@code getClass} is called.</b> For
      * example, no cast is required in this code fragment:</p>
+     *
+     * 返回的结果是{@code Class<? extends |X|>}也就是调用getClass的运行时对象，|X|是调用getClass的运行时对象的类型擦除之后的对象（一般来说是父类）；
+     * 下面的代码c的打印结果是java.lang.Integer
      *
      * <p>
      * {@code Number n = 0;                             }<br>
@@ -63,6 +95,7 @@ public class Object {
     public final native Class<?> getClass();
 
     /**
+     * 返回hash值
      * Returns a hash code value for the object. This method is
      * supported for the benefit of hash tables such as those provided by
      * {@link java.util.HashMap}.
@@ -75,15 +108,18 @@ public class Object {
      *     used in {@code equals} comparisons on the object is modified.
      *     This integer need not remain consistent from one execution of an
      *     application to another execution of the same application.
+     *     一致
      * <li>If two objects are equal according to the {@code equals(Object)}
      *     method, then calling the {@code hashCode} method on each of
      *     the two objects must produce the same integer result.
+     *     equal（）返回true，hashCode相等；反之不一定成立
      * <li>It is <em>not</em> required that if two objects are unequal
      *     according to the {@link java.lang.Object#equals(java.lang.Object)}
      *     method, then calling the {@code hashCode} method on each of the
      *     two objects must produce distinct integer results.  However, the
      *     programmer should be aware that producing distinct integer results
      *     for unequal objects may improve the performance of hash tables.
+     *     不相等的两个对象不要求产生不同的hashCode
      * </ul>
      * <p>
      * As much as is reasonably practical, the hashCode method defined by
@@ -108,23 +144,28 @@ public class Object {
      * <li>It is <i>reflexive</i>: for any non-null reference value
      *     {@code x}, {@code x.equals(x)} should return
      *     {@code true}.
+     *     自反
      * <li>It is <i>symmetric</i>: for any non-null reference values
      *     {@code x} and {@code y}, {@code x.equals(y)}
      *     should return {@code true} if and only if
      *     {@code y.equals(x)} returns {@code true}.
+     *     交换
      * <li>It is <i>transitive</i>: for any non-null reference values
      *     {@code x}, {@code y}, and {@code z}, if
      *     {@code x.equals(y)} returns {@code true} and
      *     {@code y.equals(z)} returns {@code true}, then
      *     {@code x.equals(z)} should return {@code true}.
+     *     传递
      * <li>It is <i>consistent</i>: for any non-null reference values
      *     {@code x} and {@code y}, multiple invocations of
      *     {@code x.equals(y)} consistently return {@code true}
      *     or consistently return {@code false}, provided no
      *     information used in {@code equals} comparisons on the
      *     objects is modified.
+     *     一致
      * <li>For any non-null reference value {@code x},
      *     {@code x.equals(null)} should return {@code false}.
+     *     非null
      * </ul>
      * <p>
      * The {@code equals} method for class {@code Object} implements
@@ -146,6 +187,7 @@ public class Object {
      * @see     java.util.HashMap
      */
     public boolean equals(Object obj) {
+        //比较内存地址
         return (this == obj);
     }
 
@@ -218,6 +260,7 @@ public class Object {
      * be a concise but informative representation that is easy for a
      * person to read.
      * It is recommended that all subclasses override this method.
+     * 推荐子类都重写这个方法
      * <p>
      * The {@code toString} method for class {@code Object}
      * returns a string consisting of the name of the class of which the
@@ -228,6 +271,7 @@ public class Object {
      * <blockquote>
      * <pre>
      * getClass().getName() + '@' + Integer.toHexString(hashCode())
+     *
      * </pre></blockquote>
      *
      * @return  a string representation of the object.
