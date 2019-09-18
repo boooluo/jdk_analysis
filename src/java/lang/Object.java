@@ -122,12 +122,14 @@ public class Object {
      *     不相等的两个对象不要求产生不同的hashCode
      * </ul>
      * <p>
+     *
      * As much as is reasonably practical, the hashCode method defined by
      * class {@code Object} does return distinct integers for distinct
      * objects. (This is typically implemented by converting the internal
      * address of the object into an integer, but this implementation
      * technique is not required by the
      * Java&trade; programming language.)
+     * 默认的hash返回的是把内存地址转换成的数字
      *
      * @return  a hash code value for this object.
      * @see     java.lang.Object#equals(java.lang.Object)
