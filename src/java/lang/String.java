@@ -46,6 +46,7 @@ import java.util.regex.PatternSyntaxException;
  * <p>
  * Strings are constant; their values cannot be changed after they
  * are created. String buffers support mutable strings.
+ * String是常量，他们的值在创建之后就不会发生改变；StringBuffer支持可变对象；
  * Because String objects are immutable they can be shared. For example:
  * <blockquote><pre>
  *     String str = "abc";
@@ -85,12 +86,14 @@ import java.util.regex.PatternSyntaxException;
  * <p> Unless otherwise noted, passing a <tt>null</tt> argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
+ * 传递null参数给String的构造函数都会抛出NullPointerException
  *
  * <p>A {@code String} represents a string in the UTF-16 format
  * in which <em>supplementary characters</em> are represented by <em>surrogate
  * pairs</em> (see the section <a href="Character.html#unicode">Unicode
  * Character Representations</a> in the {@code Character} class for
  * more information).
+ * String使用UTF-16编码
  * Index values refer to {@code char} code units, so a supplementary
  * character uses two positions in a {@code String}.
  * <p>The {@code String} class provides methods for dealing with
@@ -110,7 +113,8 @@ import java.util.regex.PatternSyntaxException;
 
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence {
-    /** The value is used for character storage. */
+    /** The value is used for character storage.
+     * value数组的引用是不可变的，数组里的对象是可以变的，所以String没有开放修改value数组额方法*/
     private final char value[];
 
     /** Cache the hash code for the string */
@@ -158,6 +162,7 @@ public final class String
      * characters currently contained in the character array argument. The
      * contents of the character array are copied; subsequent modification of
      * the character array does not affect the newly created string.
+     * 使用了copy对原数组的修改不影响新的对象
      *
      * @param  value
      *         The initial value of the string
@@ -173,6 +178,7 @@ public final class String
      * argument specifies the length of the subarray. The contents of the
      * subarray are copied; subsequent modification of the character array does
      * not affect the newly created string.
+     * copy数组中的一部分
      *
      * @param  value
      *         Array that is the source of characters
@@ -968,10 +974,13 @@ public final class String
         if (anObject instanceof String) {
             String anotherString = (String)anObject;
             int n = value.length;
+            //长度相等
             if (n == anotherString.value.length) {
                 char v1[] = value;
                 char v2[] = anotherString.value;
                 int i = 0;
+
+                //？？？
                 while (n-- != 0) {
                     if (v1[i] != v2[i])
                         return false;
@@ -1023,6 +1032,7 @@ public final class String
      * same sequence of char values as the specified sequence. Note that if the
      * {@code CharSequence} is a {@code StringBuffer} then the method
      * synchronizes on it.
+     * 比较内容使用了synchronized修饰
      *
      * @param  cs
      *         The sequence to compare this {@code String} against
@@ -1036,6 +1046,7 @@ public final class String
     public boolean contentEquals(CharSequence cs) {
         // Argument is a StringBuffer, StringBuilder
         if (cs instanceof AbstractStringBuilder) {
+            //StringBuffer使用同步块
             if (cs instanceof StringBuffer) {
                 synchronized(cs) {
                    return nonSyncContentEquals((AbstractStringBuilder)cs);
@@ -1110,6 +1121,7 @@ public final class String
      * are equal; {@code compareTo} returns {@code 0} exactly when
      * the {@link #equals(Object)} method would return {@code true}.
      * <p>
+     * 比较两个字符的Unicode
      * This is the definition of lexicographic ordering. If two strings are
      * different, then either they have different characters at some index
      * that is a valid index for both strings, or their lengths are different,
@@ -1130,6 +1142,9 @@ public final class String
      * <blockquote><pre>
      * this.length()-anotherString.length()
      * </pre></blockquote>
+     * 两个字符串不相等，有两种情况：长度不相等和相同位置上是的字符不同；
+     * 第一种情况返回this.length()-anotherString.length()
+     * 第二种返回this.charAt(k)-anotherString.charAt(k)，其中k是最小的那个index
      *
      * @param   anotherString   the {@code String} to be compared.
      * @return  the value {@code 0} if the argument string is equal to
