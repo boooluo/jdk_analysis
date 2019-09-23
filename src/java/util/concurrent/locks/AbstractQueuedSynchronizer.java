@@ -282,7 +282,7 @@ import sun.misc.Unsafe;
  *     sync.acquireSharedInterruptibly(1);
  *   }
  * }}</pre>
- *
+ * 队列同步器：用来构建锁或者其他同步组件的基础框架，使用int成员变量表示同步状态，通过内置的FIFO队列完成资源获取线程的排队工作
  * @since 1.5
  * @author Doug Lea
  */
@@ -378,9 +378,9 @@ public abstract class AbstractQueuedSynchronizer
      * on the design of this class.
      */
     static final class Node {
-        /** Marker to indicate a node is waiting in shared mode */
+        /** 共享锁 Marker to indicate a node is waiting in shared mode */
         static final Node SHARED = new Node();
-        /** Marker to indicate a node is waiting in exclusive mode */
+        /** 独占锁：同一时刻只能有一个线程获取到同步状态 Marker to indicate a node is waiting in exclusive mode */
         static final Node EXCLUSIVE = null;
 
         /** waitStatus value to indicate thread has cancelled */
@@ -396,6 +396,7 @@ public abstract class AbstractQueuedSynchronizer
         static final int PROPAGATE = -3;
 
         /**
+         * 等待状态，有以下状态
          * Status field, taking on only the values:
          *   SIGNAL:     The successor of this node is (or will soon be)
          *               blocked (via park), so the current node must
@@ -404,21 +405,30 @@ public abstract class AbstractQueuedSynchronizer
          *               first indicate they need a signal,
          *               then retry the atomic acquire, and then,
          *               on failure, block.
+         *               后继结点的线程处于等待状态，如果当前节点的线程释放了同步状态或者被取消，将会通知后继结点，使其得以运行
+         *
          *   CANCELLED:  This node is cancelled due to timeout or interrupt.
          *               Nodes never leave this state. In particular,
          *               a thread with cancelled node never again blocks.
+         *               由于在同步队列中等待的线程等待超时或者被中断，需要从同步队列中取消等待，节点接入该节点将不会变化
+         *
          *   CONDITION:  This node is currently on a condition queue.
          *               It will not be used as a sync queue node
          *               until transferred, at which time the status
          *               will be set to 0. (Use of this value here has
          *               nothing to do with the other uses of the
          *               field, but simplifies mechanics.)
+         *               当其他线程对condition调用了signal()方法，该节点会从condition队列转移到同步队列，试图获取同步状态
+         *
          *   PROPAGATE:  A releaseShared should be propagated to other
          *               nodes. This is set (for head node only) in
          *               doReleaseShared to ensure propagation
          *               continues, even if other operations have
          *               since intervened.
+         *               下一次共享式同步状态获取将会无条件的被传播下去 todo 不太理解。。。
+         *
          *   0:          None of the above
+         *              初始状态
          *
          * The values are arranged numerically to simplify use.
          * Non-negative values mean that a node doesn't need to
@@ -462,6 +472,7 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * The thread that enqueued this node.  Initialized on
          * construction and nulled out after use.
+         * 获取同步状态的线程
          */
         volatile Thread thread;
 
@@ -528,7 +539,9 @@ public abstract class AbstractQueuedSynchronizer
     private transient volatile Node tail;
 
     /**
-     * The synchronization state.
+     * The synchronization state.同步状态，state的相关操作都是安全的
+     * state > 0 => 已经获取了锁
+     * state = 0 => 释放了锁
      */
     private volatile int state;
 
@@ -555,7 +568,7 @@ public abstract class AbstractQueuedSynchronizer
      * value if the current state value equals the expected value.
      * This operation has memory semantics of a {@code volatile} read
      * and write.
-     *
+     * 使用CAS设置当前状态，保证原子性
      * @param expect the expected value
      * @param update the new value
      * @return {@code true} if successful. False return indicates that the actual
@@ -577,16 +590,17 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Inserts node into queue, initializing if necessary. See picture above.
+     * 通过死循环保证节点正常加入[只有通过CAS将节点设置为尾节点，当前线程才能从方法中返回]
      * @param node the node to insert
      * @return node's predecessor
      */
     private Node enq(final Node node) {
         for (;;) {
             Node t = tail;
-            if (t == null) { // Must initialize
+            if (t == null) { // Must initialize 初始化
                 if (compareAndSetHead(new Node()))
                     tail = head;
-            } else {
+            } else { // 添加到尾节点
                 node.prev = t;
                 if (compareAndSetTail(t, node)) {
                     t.next = node;
@@ -598,7 +612,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Creates and enqueues node for current thread and given mode.
-     *
+     * 将当前线程的节点加入队列尾部
      * @param mode Node.EXCLUSIVE for exclusive, Node.SHARED for shared
      * @return the new node
      */
@@ -849,7 +863,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Acquires in exclusive uninterruptible mode for thread already in
      * queue. Used by condition wait methods as well as acquire.
-     *
+     * 在死循环中尝试获取同步状态，只有前驱节点是head的节点，才能尝试获取同步状态
      * @param node the node
      * @param arg the acquire argument
      * @return {@code true} if interrupted while waiting
@@ -1015,11 +1029,13 @@ public abstract class AbstractQueuedSynchronizer
         if (nanosTimeout <= 0L)
             return false;
         final long deadline = System.nanoTime() + nanosTimeout;
+        // 共享模式将线程加入队列，进行排队
         final Node node = addWaiter(Node.SHARED);
         boolean failed = true;
         try {
             for (;;) {
                 final Node p = node.predecessor();
+                // 到该线程执行时，执行tryAcquireShared重新获取状态变量，修改head，返回true
                 if (p == head) {
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
@@ -1030,11 +1046,13 @@ public abstract class AbstractQueuedSynchronizer
                     }
                 }
                 nanosTimeout = deadline - System.nanoTime();
+                // 超时，返回
                 if (nanosTimeout <= 0L)
                     return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     nanosTimeout > spinForTimeoutThreshold)
                     LockSupport.parkNanos(this, nanosTimeout);
+                // 中断，抛出异常
                 if (Thread.interrupted())
                     throw new InterruptedException();
             }
@@ -1050,7 +1068,7 @@ public abstract class AbstractQueuedSynchronizer
      * Attempts to acquire in exclusive mode. This method should query
      * if the state of the object permits it to be acquired in the
      * exclusive mode, and if so to acquire it.
-     *
+     * 独占模式获取状态变量
      * <p>This method is always invoked by the thread performing
      * acquire.  If this method reports failure, the acquire method
      * may queue the thread, if it is not already queued, until it is
@@ -1079,7 +1097,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Attempts to set the state to reflect a release in exclusive
      * mode.
-     *
+     * 独占模式释放状态变量
      * <p>This method is always invoked by the thread performing release.
      *
      * <p>The default implementation throws
@@ -1106,12 +1124,12 @@ public abstract class AbstractQueuedSynchronizer
      * Attempts to acquire in shared mode. This method should query if
      * the state of the object permits it to be acquired in the shared
      * mode, and if so to acquire it.
-     *
+     * 共享模式申请状态变量，方法应该查询共享模式下，object permit是否可以分配
      * <p>This method is always invoked by the thread performing
      * acquire.  If this method reports failure, the acquire method
      * may queue the thread, if it is not already queued, until it is
      * signalled by a release from some other thread.
-     *
+     * 线程执行acquire会调用这个方法，如果失败，会进行排队，直到其他线程调用release释放资源
      * <p>The default implementation throws {@link
      * UnsupportedOperationException}.
      *
@@ -1128,6 +1146,9 @@ public abstract class AbstractQueuedSynchronizer
      *         return values enables this method to be used in contexts
      *         where acquires only sometimes act exclusively.)  Upon
      *         success, this object has been acquired.
+     *         返回负数表示失败
+     *         返回0
+     *         返回正数
      * @throws IllegalMonitorStateException if acquiring would place this
      *         synchronizer in an illegal state. This exception must be
      *         thrown in a consistent fashion for synchronization to work
@@ -1168,7 +1189,7 @@ public abstract class AbstractQueuedSynchronizer
      * respect to the current (calling) thread.  This method is invoked
      * upon each call to a non-waiting {@link ConditionObject} method.
      * (Waiting methods instead invoke {@link #release}.)
-     *
+     * 判断是否为独占锁
      * <p>The default implementation throws {@link
      * UnsupportedOperationException}. This method is invoked
      * internally only within {@link ConditionObject} methods, so need
@@ -1352,7 +1373,7 @@ public abstract class AbstractQueuedSynchronizer
      * because cancellations due to interrupts and timeouts may occur
      * at any time, a {@code true} return does not guarantee that any
      * other thread will ever acquire.
-     *
+     * 查询是否有现成等待acquire
      * <p>In this implementation, this operation returns in
      * constant time.
      *
@@ -1432,7 +1453,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Returns true if the given thread is currently queued.
-     *
+     * 做一遍遍历，判断线程是否在AQS中排队
      * <p>This implementation traverses the queue to determine
      * presence of the given thread.
      *
@@ -1469,7 +1490,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Queries whether any threads have been waiting to acquire longer
      * than the current thread.
-     *
+     * 查询是否存在其他线程，比当前线程等的时间更久
      * <p>An invocation of this method is equivalent to (but may be
      * more efficient than):
      *  <pre> {@code
@@ -1530,11 +1551,12 @@ public abstract class AbstractQueuedSynchronizer
      * internal data structures.  This method is designed for use in
      * monitoring system state, not for synchronization
      * control.
-     *
+     * 返回等待acquire的预估线程数[这个方法贯穿整个内部数据结构，因为内部数据动态变化，所以这个值是预估的，用于监控，而且同步控制]
      * @return the estimated number of threads waiting to acquire
      */
     public final int getQueueLength() {
         int n = 0;
+        // todo 为什么所有的遍历都是从tail开始
         for (Node p = tail; p != null; p = p.prev) {
             if (p.thread != null)
                 ++n;
