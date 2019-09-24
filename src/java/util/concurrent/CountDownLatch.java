@@ -39,7 +39,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 /**
  * A synchronization aid that allows one or more threads to wait until
  * a set of operations being performed in other threads completes.
- *
+ * 多个线程待操作完成后，继续执行
  * <p>A {@code CountDownLatch} is initialized with a given <em>count</em>.
  * The {@link #await await} methods block until the current count reaches
  * zero due to invocations of the {@link #countDown} method, after which
@@ -47,7 +47,9 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * {@link #await await} return immediately.  This is a one-shot phenomenon
  * -- the count cannot be reset.  If you need a version that resets the
  * count, consider using a {@link CyclicBarrier}.
- *
+ * todo CountDownLatch vs CyclicBarrier
+ * CountDownLatch：count不能被重置，CyclicBarrier：count可以重置，多次使用
+ * CountDownLatch：基于AQS， CyclicBarrier：基于ReentrantLock
  * <p>A {@code CountDownLatch} is a versatile synchronization tool
  * and can be used for a number of purposes.  A
  * {@code CountDownLatch} initialized with a count of one serves as a
@@ -56,7 +58,9 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * #countDown}.  A {@code CountDownLatch} initialized to <em>N</em>
  * can be used to make one thread wait until <em>N</em> threads have
  * completed some action, or some action has been completed N times.
- *
+ * 两种使用场景：
+ * initialized 1:作为一个开关，开关开启后，所有线程执行
+ * initialized N:等待N个线程执行完，或者某个操作被执行N次
  * <p>A useful property of a {@code CountDownLatch} is that it
  * doesn't require that threads calling {@code countDown} wait for
  * the count to reach zero before proceeding, it simply prevents any
@@ -169,10 +173,20 @@ public class CountDownLatch {
             return getState();
         }
 
+        /**
+         * 只有state = 0, 才能请求成功
+         * @param acquires
+         * @return
+         */
         protected int tryAcquireShared(int acquires) {
             return (getState() == 0) ? 1 : -1;
         }
 
+        /**
+         * 每次release后，state = state - 1
+         * @param releases
+         * @return
+         */
         protected boolean tryReleaseShared(int releases) {
             // Decrement count; signal when transition to zero
             for (;;) {
@@ -280,7 +294,9 @@ public class CountDownLatch {
     /**
      * Decrements the count of the latch, releasing all waiting threads if
      * the count reaches zero.
-     *
+     * latch数量-1， 如果数量减到0释放其他所有等待的线程
+     * 为什么会释放其他所有等待的线程呢？
+     * 判断条件都相同state==0
      * <p>If the current count is greater than zero then it is decremented.
      * If the new count is zero then all waiting threads are re-enabled for
      * thread scheduling purposes.

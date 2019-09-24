@@ -73,7 +73,7 @@ jdk源码分析
 - [ ] ThreadPoolExecutor 2
 - [ ] BlockingQueue 2
 - [ ] AbstractQueuedSynchronizer 2
-- [ ] CountDownLatch 2
+- [x] CountDownLatch 2
 - [ ] FutureTask 2
 - [ ] Semaphore 2
 - [x] CyclicBarrier 2
